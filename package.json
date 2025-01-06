@@ -2,6 +2,7 @@
   "name": "Arbitron",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -12,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "@algorandfoundation/algokit-utils": "^8.0.3",
+    "@deflex/deflex-sdk-js": "^2.0.5",
     "algosdk": "^3.0.0",
     "axios": "^1.7.9",
     "dotenv": "^16.4.7",
