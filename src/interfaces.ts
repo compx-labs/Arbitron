@@ -21,4 +21,5 @@ export interface FavourableTrade {
     profit: number;
     quote: DeflexQuote;
     totalFeeUSD: number;
+    profitable: boolean;
 }
