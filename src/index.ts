@@ -14,7 +14,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 const tradingTask = cron.schedule(
-    "/5 * * * *",
+    "*/5 * * * *",
     async () => await startTradingRun()
 );
 tradingTask.stop();
