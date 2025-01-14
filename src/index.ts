@@ -22,6 +22,9 @@ tradingTask.stop();
 router.route("/status").get(async (req, res) => {
     res.send(await getArbitronStatus());
 });
+router.route("/").get((req, res) => {
+    res.send(startTradingRun());
+});
 router.route("/trade").get(async (req, res) => {
     console.log('Starting trading run');
     res.send(tradingTask.start());

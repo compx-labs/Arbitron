@@ -80,11 +80,11 @@ async function getQuotesForTradableAssets(tradableAssets: AssetHolding[], priceM
             if (quote) {
                 const profitableResult = await isQuoteProfitable(quote, priceMap, assetInfo);
                 if (profitableResult?.profitable) {
-                    await executeTrade(profitableResult, priceMap, assetInfo);
+                    const success = await executeTrade(profitableResult, priceMap, assetInfo);
                     tradeCompleted = true;
                     return {
                         trade: profitableResult,
-                        tradeComplete: true
+                        tradeComplete: success
                     };
                 }
             }
@@ -138,7 +138,8 @@ async function isQuoteProfitable(quote: DeflexQuote, priceMap: any, assetInfo: a
         const assetOutPrice = priceMap[assetOut].max || 0;
         const assetOutDecimals = assetInfo[assetOut].params.decimals || 6;
         const totalFees = Object.values(quote.protocolFees).map((fee) => Number(fee)).reduce((a, b) => a + b, 0);
-        const feeAmount = totalFees * assetOutPrice / 10 ** assetOutDecimals;
+        let feeAmount = totalFees * assetOutPrice / 10 ** assetOutDecimals;
+        feeAmount += 0.048 * priceMap[0].max;
         const USDValue = ((Number(quote.quote) * assetOutPrice) / 10 ** assetOutDecimals) - feeAmount;
         if (USDValue > ENV.TRADE_VALUE) {
             return {
@@ -157,7 +158,7 @@ async function isQuoteProfitable(quote: DeflexQuote, priceMap: any, assetInfo: a
     return null;
 }
 
-export async function executeTrade(trade: FavourableTrade, priceMap: any, assetInfo: any,) {
+export async function executeTrade(trade: FavourableTrade, priceMap: any, assetInfo: any,): Promise<boolean> {
     try {
         console.log(`Excetuing trade ${trade.assetIn} -> ${trade.assetOut}`);
         const txnGroup = await deflexRouterClient.getSwapQuoteTransactions(
@@ -180,11 +181,12 @@ export async function executeTrade(trade: FavourableTrade, priceMap: any, assetI
 
         const { txid } = await algodClient.sendRawTransaction(signedTxns).do();
         console.log('Trade executed', txid);
+        return true;
 
     } catch (error) {
         console.error('Failed to execute trade', error);
+        return false;
     }
-
 }
 
 export async function getWalletValue(priceMap: any, assetInfo: any): Promise<number> {
