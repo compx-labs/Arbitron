@@ -14,7 +14,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 const tradingTask = cron.schedule(
-    "*/5 * * * *",
+    "*/2 * * * *",
     async () => await startTradingRun()
 );
 tradingTask.stop();
@@ -23,9 +23,11 @@ router.route("/status").get(async (req, res) => {
     res.send(await getArbitronStatus());
 });
 router.route("/trade").get(async (req, res) => {
+    console.log('Starting trading run');
     res.send(tradingTask.start());
 });
 router.route("/trade/stop").get((req, res) => {
+    console.log('Stopping trading run');
     res.send(tradingTask.stop());
 });
 
