@@ -23,3 +23,8 @@ export interface FavourableTrade {
     totalFeeUSD: number;
     profitable: boolean;
 }
+
+export interface TradeOutput {
+    trade: FavourableTrade;
+    tradeComplete: boolean;
+}

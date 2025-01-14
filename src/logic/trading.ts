@@ -2,11 +2,12 @@ import { getArbitronStatus } from "./setup";
 import { deflexRouterClient } from "../deflex/client";
 import { ENV } from "../constants";
 import axios from "axios";
-import { AssetHolding, FavourableTrade } from "../interfaces";
+import { AssetHolding, FavourableTrade, TradeOutput } from "../interfaces";
 import { DeflexQuote } from "@deflex/deflex-sdk-js";
 import algosdk from "algosdk";
 import { algodClient } from "../algorand/config";
 import { get } from "http";
+import { sendAuditTransaction } from "../algorand/txns";
 
 export async function startTradingRun() {
     try {
@@ -44,11 +45,12 @@ export async function startTradingRun() {
                         return currentValue > ENV.TRADABLE_ASSET_MINIMUM_VALUE;
                     });
                     //check each tradable asset agains tthe other for a favourable trade and execute if profitable
-                    const tradeCompleted = await getQuotesForTradableAssets(tradableAssets, priceMap, assetInfo, arbitronStatus.assetBalances);
-                    if (tradeCompleted) {
+                    const tradingResult = await getQuotesForTradableAssets(tradableAssets, priceMap, assetInfo, arbitronStatus.assetBalances);
+                    if (tradingResult.tradeComplete) {
                         const endingValue = await getWalletValue(priceMap, assetInfo);
                         const profit = endingValue - startingValue;
                         console.log('Profit: ', profit);
+                        sendAuditTransaction(tradingResult.trade);
                     } else {
                         console.log('No profitable trades found');
                     }
@@ -63,7 +65,7 @@ export async function startTradingRun() {
 }
 
 
-async function getQuotesForTradableAssets(tradableAssets: AssetHolding[], priceMap: any, assetInfo: any, allAssets: AssetHolding[]): Promise<boolean> {
+async function getQuotesForTradableAssets(tradableAssets: AssetHolding[], priceMap: any, assetInfo: any, allAssets: AssetHolding[]): Promise<TradeOutput> {
     let tradeCompleted = false;
     try {
         const assetPairs = tradableAssets.flatMap(assetIn =>
@@ -80,8 +82,10 @@ async function getQuotesForTradableAssets(tradableAssets: AssetHolding[], priceM
                 if (profitableResult?.profitable) {
                     await executeTrade(profitableResult, priceMap, assetInfo);
                     tradeCompleted = true;
-                    return tradeCompleted;
-                    //console.log('Profitable trade found', profitableResult);
+                    return {
+                        trade: profitableResult,
+                        tradeComplete: true
+                    };
                 }
             }
         }
@@ -89,7 +93,10 @@ async function getQuotesForTradableAssets(tradableAssets: AssetHolding[], priceM
         console.error('Failed to check favourable trades', error);
 
     }
-    return tradeCompleted;
+    return {
+        trade: {} as FavourableTrade,
+        tradeComplete: false
+    };
 }
 
 async function findProfitableTrades(quotes: DeflexQuote[], priceMap: any, assetInfo: any, allAssets: AssetHolding[]): Promise<FavourableTrade[]> {

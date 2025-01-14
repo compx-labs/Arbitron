@@ -8,8 +8,7 @@ export const ENV = {
     WALLET_ADDRESS: process.env.WALLET_ADDRESS as string,
     COMPX_BACKEND_API_URL: process.env.COMPX_BACKEND_API_URL as string,
     ALGOD_API_URL: process.env.ALGOD_API_URL as string,
-    INDEXER_URL: 'https://mainnet-idx.algonode.cloud/v2',
-    XUSD_ASSET_ID: 760037151,
-    TRADABLE_ASSET_MINIMUM_VALUE: 100,
-    TRADE_VALUE: 100,
+    INDEXER_URL: process.env.INDEXER_URL as string,
+    TRADABLE_ASSET_MINIMUM_VALUE: process.env.TRADABLE_ASSET_MINIMUM_VALUE ? Number(process.env.TRADABLE_ASSET_MINIMUM_VALUE) : 100,
+    TRADE_VALUE: process.env.TRADE_VALUE ? Number(process.env.TRADE_VALUE) : 1,
 };
