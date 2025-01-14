@@ -32,17 +32,24 @@ export async function startTradingRun() {
                     const startingValue = await getWalletValue(priceMap, assetInfo);
 
                     //confirm assets with greater than $100
+                    const MBR = arbitronStatus.assetBalances.length * 100000 + 1000000;
                     const tradableAssets = arbitronStatus.assetBalances.filter((asset) => {
                         const assetPrice = priceMap[asset.assetId].max || 0;
-                        const decimals = assetInfo[asset.assetId].params.decimals || 6;
+                        const decimals = assetInfo[asset.assetId]?.params.decimals || 6;
                         let assetAmount = asset.amount;
-                        if (asset.assetId === 0) {
-                            //deduct MBR from the amount
-                            const MBR = arbitronStatus.assetBalances.length * 100000 + 1000000;
-                            assetAmount -= MBR;
-                        }
                         const currentValue = assetAmount * assetPrice / 10 ** decimals;
                         return currentValue > ENV.TRADABLE_ASSET_MINIMUM_VALUE;
+                    });
+                    if (((arbitronStatus.algoBalance * priceMap[0].max) - MBR) / 10 ** 6 > ENV.TRADABLE_ASSET_MINIMUM_VALUE ) {
+                        tradableAssets.push({
+                            assetId: 0,
+                            amount: arbitronStatus.algoBalance
+                        });
+
+                    }
+                    arbitronStatus.assetBalances.push({
+                        assetId: 0,
+                        amount: arbitronStatus.algoBalance
                     });
                     //check each tradable asset agains tthe other for a favourable trade and execute if profitable
                     const tradingResult = await getQuotesForTradableAssets(tradableAssets, priceMap, assetInfo, arbitronStatus.assetBalances);
@@ -74,7 +81,7 @@ async function getQuotesForTradableAssets(tradableAssets: AssetHolding[], priceM
                 .map(assetOut => ({ assetIn, assetOut }))
         );
         for (const { assetIn, assetOut } of assetPairs) {
-            const tradeValue = Math.floor((ENV.TRADE_VALUE / priceMap[assetIn.assetId].max) * 10 ** (assetInfo[assetIn.assetId].params.decimals || 6));
+            const tradeValue = Math.floor((ENV.TRADE_VALUE / priceMap[assetIn.assetId].max) * 10 ** (assetInfo[assetIn.assetId]?.params.decimals || 6));
             const quote = await deflexRouterClient.getFixedInputSwapQuote(assetIn.assetId, assetOut.assetId, tradeValue);
             console.log(`Got quote for ${assetIn.assetId} -> ${assetOut.assetId}`);
             if (quote) {
@@ -136,7 +143,7 @@ async function isQuoteProfitable(quote: DeflexQuote, priceMap: any, assetInfo: a
         const assetIn = Number(quote.fromASAID);
         const assetOut = Number(quote.toASAID);
         const assetOutPrice = priceMap[assetOut].max || 0;
-        const assetOutDecimals = assetInfo[assetOut].params.decimals || 6;
+        const assetOutDecimals = assetInfo[assetOut]?.params.decimals || 6;
         const totalFees = Object.values(quote.protocolFees).map((fee) => Number(fee)).reduce((a, b) => a + b, 0);
         let feeAmount = totalFees * assetOutPrice / 10 ** assetOutDecimals;
         feeAmount += 0.048 * priceMap[0].max;
