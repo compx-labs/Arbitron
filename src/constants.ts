@@ -11,4 +11,6 @@ export const ENV = {
     INDEXER_URL: process.env.INDEXER_URL as string,
     TRADABLE_ASSET_MINIMUM_VALUE: process.env.TRADABLE_ASSET_MINIMUM_VALUE ? Number(process.env.TRADABLE_ASSET_MINIMUM_VALUE) : 100,
     TRADE_VALUE: process.env.TRADE_VALUE ? Number(process.env.TRADE_VALUE) : 1,
+    TRADE_INTERVAL: process.env.TRADE_INTERVAL ? Number(process.env.TRADE_INTERVAL) : 10000,
+    MINIMUM_PROFIT: process.env.MINIMUM_PROFIT ? Number(process.env.MINIMUM_PROFIT) : 0.01,
 };

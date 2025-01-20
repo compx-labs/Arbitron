@@ -40,7 +40,7 @@ export async function startTradingRun() {
                         const currentValue = assetAmount * assetPrice / 10 ** decimals;
                         return currentValue > ENV.TRADABLE_ASSET_MINIMUM_VALUE;
                     });
-                    if (((arbitronStatus.algoBalance * priceMap[0].max) - MBR) / 10 ** 6 > ENV.TRADABLE_ASSET_MINIMUM_VALUE ) {
+                    if (((arbitronStatus.algoBalance * priceMap[0].max) - MBR) / 10 ** 6 > ENV.TRADABLE_ASSET_MINIMUM_VALUE) {
                         tradableAssets.push({
                             assetId: 0,
                             amount: arbitronStatus.algoBalance
@@ -149,13 +149,15 @@ async function isQuoteProfitable(quote: DeflexQuote, priceMap: any, assetInfo: a
         feeAmount += 0.048 * priceMap[0].max;
         const USDValue = ((Number(quote.quote) * assetOutPrice) / 10 ** assetOutDecimals) - feeAmount;
         if (USDValue > ENV.TRADE_VALUE) {
-            return {
-                assetIn,
-                assetOut,
-                profit: USDValue - ENV.TRADE_VALUE,
-                quote,
-                totalFeeUSD: feeAmount,
-                profitable: true,
+            if (USDValue - ENV.TRADE_VALUE > ENV.MINIMUM_PROFIT) {
+                return {
+                    assetIn,
+                    assetOut,
+                    profit: USDValue - ENV.TRADE_VALUE,
+                    quote,
+                    totalFeeUSD: feeAmount,
+                    profitable: true,
+                };
             };
         }
     } catch (error) {
