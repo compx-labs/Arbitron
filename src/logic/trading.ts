@@ -119,7 +119,7 @@ async function findProfitableTrades(quotes: DeflexQuote[], priceMap: any, assetI
             const feeAmount = totalFees * assetOutPrice / 10 ** assetOutDecimals;
             const USDValue = ((Number(quote.quote) * assetOutPrice) / 10 ** assetOutDecimals) - feeAmount;
 
-            if (USDValue > ENV.TRADE_VALUE) {
+            if (USDValue > ENV.TRADE_VALUE && USDValue - ENV.TRADE_VALUE > ENV.MINIMUM_PROFIT) {
                 favourableTrades.push({
                     assetIn,
                     assetOut,
@@ -148,16 +148,14 @@ async function isQuoteProfitable(quote: DeflexQuote, priceMap: any, assetInfo: a
         let feeAmount = totalFees * assetOutPrice / 10 ** assetOutDecimals;
         feeAmount += 0.048 * priceMap[0].max;
         const USDValue = ((Number(quote.quote) * assetOutPrice) / 10 ** assetOutDecimals) - feeAmount;
-        if (USDValue > ENV.TRADE_VALUE) {
-            if (USDValue - ENV.TRADE_VALUE > ENV.MINIMUM_PROFIT) {
-                return {
-                    assetIn,
-                    assetOut,
-                    profit: USDValue - ENV.TRADE_VALUE,
-                    quote,
-                    totalFeeUSD: feeAmount,
-                    profitable: true,
-                };
+        if (USDValue > ENV.TRADE_VALUE && USDValue - ENV.TRADE_VALUE > ENV.MINIMUM_PROFIT) {
+            return {
+                assetIn,
+                assetOut,
+                profit: USDValue - ENV.TRADE_VALUE,
+                quote,
+                totalFeeUSD: feeAmount,
+                profitable: true,
             };
         }
     } catch (error) {
