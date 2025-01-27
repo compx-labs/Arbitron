@@ -119,7 +119,7 @@ async function findProfitableTrades(quotes: DeflexQuote[], priceMap: any, assetI
             const feeAmount = totalFees * assetOutPrice / 10 ** assetOutDecimals;
             const USDValue = ((Number(quote.quote) * assetOutPrice) / 10 ** assetOutDecimals) - feeAmount;
 
-            if (USDValue > ENV.TRADE_VALUE) {
+            if (USDValue > ENV.TRADE_VALUE && USDValue - ENV.TRADE_VALUE > ENV.MINIMUM_PROFIT) {
                 favourableTrades.push({
                     assetIn,
                     assetOut,
