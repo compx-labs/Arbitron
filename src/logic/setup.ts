@@ -2,6 +2,7 @@ import { getWalletInfo } from "../algorand/wallet";
 import { ArbitronStatus, AssetHolding } from "../interfaces";
 import { ENV } from '../constants';
 
+let totalProfit = 0;
 
 export async function getArbitronStatus(): Promise<ArbitronStatus> {
     try {
@@ -19,7 +20,7 @@ export async function getArbitronStatus(): Promise<ArbitronStatus> {
                 algoBalance: Number(walletInfo.amount),
                 assetBalances: assetBalances,
                 lastRunTimestamp: 0,
-                profit: 0,
+                profit: totalProfit,
                 mode: ''
             }
         }
@@ -33,7 +34,12 @@ export async function getArbitronStatus(): Promise<ArbitronStatus> {
         algoBalance: 0,
         assetBalances: [],
         lastRunTimestamp: 0,
-        profit: 0,
+        profit: totalProfit,
         mode: ''
     }
+}
+
+export const updateProfit = (profit: number) => {    
+    totalProfit += profit;
+    console.log('Total profit: ', totalProfit.toLocaleString("en-US", { style: "currency", currency: "USD" }));
 }

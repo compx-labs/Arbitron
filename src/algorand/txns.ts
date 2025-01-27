@@ -2,8 +2,7 @@ import algosdk from "algosdk";
 import { FavourableTrade } from "../interfaces";
 import { algodClient } from "./config";
 import { ENV } from "../constants";
-
-
+import { updateProfit } from "../logic/setup";
 
 export async function sendAuditTransaction(trade: FavourableTrade) {
     try {
@@ -17,7 +16,10 @@ export async function sendAuditTransaction(trade: FavourableTrade) {
             suggestedParams: sp
         });
         const signedTxn = txn.signTxn(algosdk.mnemonicToSecretKey(ENV.WALLET_SK).sk);
-        const { txid } = await algodClient.sendRawTransaction(signedTxn).do();
+
+        await algodClient.sendRawTransaction(signedTxn).do();
+
+        updateProfit(trade.profit);
     } catch (error) {
         console.error('Failed to send audit transaction', error);
     }

@@ -56,7 +56,6 @@ export async function startTradingRun() {
                     if (tradingResult.tradeComplete) {
                         const endingValue = await getWalletValue(priceMap, assetInfo);
                         const profit = endingValue - startingValue;
-                        console.log('Profit: ', profit);
                         sendAuditTransaction(tradingResult.trade);
                     } else {
                         console.log('No profitable trades found');
@@ -80,7 +79,8 @@ async function getQuotesForTradableAssets(tradableAssets: AssetHolding[], priceM
                 .filter(assetOut => assetIn.assetId !== assetOut.assetId)
                 .map(assetOut => ({ assetIn, assetOut }))
         );
-        for (const { assetIn, assetOut } of assetPairs) {
+
+        const tradePromises = assetPairs.map(async ({ assetIn, assetOut }) => {
             const tradeValue = Math.floor((ENV.TRADE_VALUE / priceMap[assetIn.assetId].max) * 10 ** (assetInfo[assetIn.assetId]?.params.decimals || 6));
             const quote = await deflexRouterClient.getFixedInputSwapQuote(assetIn.assetId, assetOut.assetId, tradeValue);
             console.log(`Got quote for ${assetIn.assetId} -> ${assetOut.assetId}`);
@@ -95,11 +95,19 @@ async function getQuotesForTradableAssets(tradableAssets: AssetHolding[], priceM
                     };
                 }
             }
+            return null;
+        });
+
+        const results = await Promise.all(tradePromises);
+        const successfulTrade = results.find(result => result && result.tradeComplete);
+
+        if (successfulTrade) {
+            return successfulTrade;
         }
     } catch (error) {
         console.error('Failed to check favourable trades', error);
-
     }
+
     return {
         trade: {} as FavourableTrade,
         tradeComplete: false
@@ -145,19 +153,18 @@ async function isQuoteProfitable(quote: DeflexQuote, priceMap: any, assetInfo: a
         const assetOutPrice = priceMap[assetOut].max || 0;
         const assetOutDecimals = assetInfo[assetOut]?.params.decimals || 6;
         const totalFees = Object.values(quote.protocolFees).map((fee) => Number(fee)).reduce((a, b) => a + b, 0);
-        let feeAmount = totalFees * assetOutPrice / 10 ** assetOutDecimals;
-        feeAmount += 0.048 * priceMap[0].max;
+        const feeAmount = (totalFees * assetOutPrice / 10 ** assetOutDecimals) + 0.048 * priceMap[0].max;
+
         const USDValue = ((Number(quote.quote) * assetOutPrice) / 10 ** assetOutDecimals) - feeAmount;
-        if (USDValue > ENV.TRADE_VALUE && USDValue - ENV.TRADE_VALUE > ENV.MINIMUM_PROFIT) {
-            return {
-                assetIn,
-                assetOut,
-                profit: USDValue - ENV.TRADE_VALUE,
-                quote,
-                totalFeeUSD: feeAmount,
-                profitable: true,
+
+         return {
+            assetIn,
+            assetOut,
+            profit: USDValue - ENV.TRADE_VALUE,
+            quote,
+            totalFeeUSD: feeAmount,
+            profitable: Boolean(USDValue > ENV.TRADE_VALUE && USDValue - ENV.TRADE_VALUE > ENV.MINIMUM_PROFIT),
             };
-        }
     } catch (error) {
         console.error('Failed to check if quote is profitable', error);
         return null;
@@ -206,7 +213,7 @@ export async function getWalletValue(priceMap: any, assetInfo: any): Promise<num
             totalValue += asset.amount * price / 10 ** decimals;
         }
         totalValue += walletInfo.algoBalance * priceMap[0].max / 10 ** 6;
-        console.log('Total wallet value: ', totalValue);
+        console.log('Total wallet value: ', totalValue.toLocaleString("en-US", { style: "currency", currency: "USD" }));
         return totalValue;
 
 
